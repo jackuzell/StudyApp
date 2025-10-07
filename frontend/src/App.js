@@ -1,8 +1,6 @@
-// frontend/src/App.js
-
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-// Import the global stylesheet
+// Import the  stylesheet
 import './css/styles.css'; 
 
 import NoteUpload from './components/NoteUpload';
@@ -12,14 +10,12 @@ import QuizView from './components/QuizView';
 const API_URL = 'http://localhost:5000/api/notes';
 
 function App() {
-  // State definitions remain the same...
   const [notes, setNotes] = useState([]);
   const [quizData, setQuizData] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [selectedNoteId, setSelectedNoteId] = useState(null); 
   const [error, setError] = useState('');
 
-  // --- Fetch Notes Logic (remains the same) ---
   const fetchNotes = useCallback(async () => {
     setLoading(true);
     try {
@@ -39,9 +35,7 @@ function App() {
   }, [fetchNotes]);
 
 
-  // --- Quiz Generation Logic (remains the same) ---
   const generateQuiz = async (noteId) => {
-    // ... (logic remains the same)
     setLoading(true);
     setQuizData(null);
     setError('');
@@ -65,16 +59,15 @@ function App() {
   };
 
   return (
-    // Apply the 'container' class defined in styles.css
     <div className="container">
       <h1>Study Helper App (MERN + AI)</h1>
       
-      {/* 1. Note Upload Section */}
+
       <NoteUpload onUploadSuccess={fetchNotes} />
       
       <hr style={{ margin: '30px 0' }} />
 
-      {/* 2. Note List Section */}
+      
       <NoteList 
         notes={notes}
         loading={loading && !quizData}
@@ -82,13 +75,13 @@ function App() {
         onGenerateQuiz={generateQuiz}
       />
 
-      {/* 3. Quiz View Section */}
+      
       <QuizView 
         quizData={quizData}
         onClearQuiz={clearQuiz}
       />
 
-      {/* Display a general error message if one exists */}
+      
       {error && <p className="message-box message-error">{error}</p>}
     </div>
   );
