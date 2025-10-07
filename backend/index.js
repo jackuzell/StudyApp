@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 //Database connection setup
 const PORT = process.env.PORT || 5000; // Use the port from environment variables or default to 5000
-const MONGO_URI = process.env.MONOG_URI; // MongoDB connection string from environment variables
+const MONGO_URI = process.env.MONGO_URI; // MongoDB connection string from environment variables
 
 mongoose.connect(MONGO_URI)
 .then(() => console.log('MongoDB Connecteion successful'))
@@ -27,4 +27,4 @@ app.use('/api/notes', noteRoutes); // Use note routes for /api/notes endpoint
 
 
 
-app.listen(PORT, () => console.log(`Server is running on port ${Port}`));
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

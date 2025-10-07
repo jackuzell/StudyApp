@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router(); // creation of router object
-const fs = require('fs/promises');
+const fs = require('fs').promises;
 const parsePDF = require('pdf-parse'); // extract text from pdf 
 const { GoogleGenAI } = require('@google/genai');// sdk for Google GenAI
-require('dotenv').config(); // load environment variables from .env file
+
 
 //Middleware and model
 const upload = require('../middleware/upload'); // import the multer middleware for file uploads
 const Note = require('../models/note'); // import the Note model
 
 //Initilize AI
-const ai = new GoogleGenAI(process.env.GOOGLE_API_KEY);
+const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
 
 // Route to handle file upload
 router.post('/upload', upload, async(req, res) => {
@@ -35,6 +35,37 @@ router.post('/upload', upload, async(req, res) => {
     }
 });
 
+//Route to delete a note
+router.delete('/:noteId', async(req, res) => {
+    try {
+        const note = await Note.findById(req.params.noteId);
+        if (!note) {
+            return res.status(404).json({ message: 'Note not found.' });
+        }
+
+        // Fix: Use the correct variable name 'fs' to access the stat method
+        try {
+            await fs.stat(note.filePath); // Check if the file exists
+            await fs.unlink(note.filePath); // Delete the file if it exists
+        } catch (fileError) {
+            if (fileError.code === 'ENOENT') {
+                console.warn('File not found, but proceeding with database deletion:', note.filePath);
+            } else {
+                throw fileError; // Re-throw other errors
+            }
+        }
+
+        // Use the static method on the Note model
+        await Note.deleteOne({ _id: req.params.noteId });
+
+        res.status(200).json({ message: 'Note deleted successfully.' });
+    } catch (error) {
+        console.error('Delete Note Error:', error);
+        res.status(500).json({ message: 'Error deleting the note.', error: error.message });
+    }
+});
+
+
 // Route to generate quiz
 router.get('/:noteId/quiz', async(req, res) => {
     try {
@@ -52,7 +83,7 @@ router.get('/:noteId/quiz', async(req, res) => {
         {
             const dataBuffer = await fs.readFile(note.filePath);//Read file
             const data = await parsePDF(dataBuffer);//parse to extract text
-            noteText = data.next;
+            noteText = data.text;
         } else if(fileExtension === 'txt') // can read directly 
         {
             noteText = await fs.readFile(note.filePath, 'utf-8');
@@ -90,8 +121,8 @@ router.get('/:noteId/quiz', async(req, res) => {
                     type: "object",
                     properties: {
                         quiz_title: {
-                            type: "String",
-                            desctiption: "A short, descriptive title for the quiz"
+                            type: "string",
+                            description: "A short, descriptive title for the quiz"
                         },
                         questions: {
                             type:"array",
@@ -115,7 +146,7 @@ router.get('/:noteId/quiz', async(req, res) => {
                             },
                         },
                     },
-                    required : ["quize_title", "questions"],
+                    required : ["quiz_title", "questions"],
                 },
             },
         });

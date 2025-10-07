@@ -41,7 +41,7 @@ const NoteUpload = ({ onUploadSuccess}) => {
 
             setMessage(`Success: ${response.data.message}`);
             setFile(null);
-            setTtitle('');
+            setTitle('');
             onUploadSuccess();
         }catch(error){
             console.error('Upload error:', error.repsonse ? error.response.data : error.message);
@@ -50,6 +50,9 @@ const NoteUpload = ({ onUploadSuccess}) => {
             setLoading(false);
         }
     };
+
+   const messageClass = message.includes('Success') ? 'message-success' : 'message-error';
+
 
     return(
         <div className="upload-section">
@@ -72,7 +75,7 @@ const NoteUpload = ({ onUploadSuccess}) => {
                     {loading ? 'Uploading...' : 'Upload Note'}
                 </button>
             </form>
-            {message && <p className={`message-box ${mwssageClass}`}>{message}</p>}
+            {message && <p className={`message-box ${messageClass}`}>{message}</p>}
         </div>
     );
 

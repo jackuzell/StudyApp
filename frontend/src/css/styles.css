@@ -1,4 +1,4 @@
-/* GENERAL STYLES */
+
 body {
     font-family: 'Arial', sans-serif;
     background-color: #f4f7f6;
@@ -151,4 +151,15 @@ button:disabled {
     color: red;
     background-color: #f8d7da;
     border: 1px solid #f5c6cb;
+}
+
+/* frontend/src/css/styles.css */
+.correct-answer {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.incorrect-answer {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
 }

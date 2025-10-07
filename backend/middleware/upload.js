@@ -9,7 +9,7 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => { //defines the naming convention for uploaded files
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9); // Create a umiquw name to avoid conflicts
 
-        cb(null, file.filename + '-' + uniqueSuffix + path.extname(file.originalname)); // Set the file name to original name + unique suffix + original file extension
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname)); // Set the file name to original name + unique suffix + original file extension
     }
 });
 
@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage, 
     // limit it to 5mb file size (for now)
-    limits: {fileSize: 1024 * 1-24 * 5},
+    limits: {fileSize: 1024 * 1024 * 5},
     fileFilter: (req, file, cb) => {
         // here we check if it is an acceptable file type
         if(file.mimetype === 'application/pdf' || file.mimetype === 'text/plain'){

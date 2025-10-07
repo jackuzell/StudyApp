@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const upload = require('../middleware/upload');
 const { Schema } = mongoose;
 
 const noteSchema = new Schema({ // skipped user reference for now come back to it later
