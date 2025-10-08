@@ -21,9 +21,10 @@ mongoose.connect(MONGO_URI)
 .catch( err => console.error('Mongo Db Connection error', err));
 
 //API Routes will add in later
+const authRoutes = require('./routes/authRoutes'); // Import auth routes
 const noteRoutes = require('./routes/noteRoutes'); // Import note routes
 app.use('/api/notes', noteRoutes); // Use note routes for /api/notes endpoint
-
+app.use('/api/auth', authRoutes); // Use auth routes for /api/auth endpoint
 
 
 

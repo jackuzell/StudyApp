@@ -8,6 +8,8 @@ const { GoogleGenAI } = require('@google/genai');// sdk for Google GenAI
 //Middleware and model
 const upload = require('../middleware/upload'); // import the multer middleware for file uploads
 const Note = require('../models/note'); // import the Note model
+const auth = require('../middleware/auth'); // import the auth middleware
+
 
 //Initilize AI
 const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
@@ -20,6 +22,7 @@ router.post('/upload', upload, async(req, res) => {
     try {
         // Create a new note document in the database
         const newNote = new Note({
+            user: req.user.id, 
             title: req.body.title,
             filePath: req.file.path,
             originalFileName: req.file.originalname
@@ -36,14 +39,14 @@ router.post('/upload', upload, async(req, res) => {
 });
 
 //Route to delete a note
-router.delete('/:noteId', async(req, res) => {
+router.delete('/:noteId', auth, async(req, res) => {
     try {
-        const note = await Note.findById(req.params.noteId);
+        const note = await Note.findOne({ _id: req.params.noteId, user: req.user.id });
         if (!note) {
             return res.status(404).json({ message: 'Note not found.' });
         }
 
-        // Fix: Use the correct variable name 'fs' to access the stat method
+        
         try {
             await fs.stat(note.filePath); // Check if the file exists
             await fs.unlink(note.filePath); // Delete the file if it exists
@@ -69,11 +72,12 @@ router.delete('/:noteId', async(req, res) => {
 // Route to generate quiz
 router.get('/:noteId/quiz', async(req, res) => {
     try {
-        const note = await Note.findById(req.params.noteId);
+        // Find the note and ensure it belongs to the authenticated user
+        const note = await Note.findOne({ _id: req.params.noteId, user: req.user.id });
 
         if(!note)
         {
-            return res.status(404).json({message: 'Note not found'});
+            return res.status(404).json({message: 'Note not found or you are not authorized to view it.'});
         }
 
         let noteText = '';
@@ -164,7 +168,7 @@ router.get('/:noteId/quiz', async(req, res) => {
 //Get all notes 
 router.get('/', async(req,res) => {
     try{ //Maybe add in filter by user id here later 
-        const notes = await Note.find().sort({uploadDate: -1});
+        const notes = await (await Note.find({user: req.user.id})).sort({uploadDate: -1});
         res.json(notes);
     } catch(error) {
         console.error('Fetch Notes Error:', error);

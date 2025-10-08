@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './css/styles.css'; 
 
+import AuthForm from './components/AuthForm';
 import NoteUpload from './components/NoteUpload';
 import NoteList from './components/NoteList';
 import QuizView from './components/QuizView';
@@ -9,14 +10,30 @@ import QuizView from './components/QuizView';
 const API_URL = 'http://localhost:5000/api/notes';
 
 function App() {
+  const [user, setUser] = useState(null); // User state for authentication
   const [notes, setNotes] = useState([]);
   const [quizData, setQuizData] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [selectedNoteId, setSelectedNoteId] = useState(null); 
   const [error, setError] = useState('');
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    if(!token) return null;
+    return{
+      headers:{
+        'x-auth-token': token
+      }
+    };
+  };
+
   // --- Fetch Notes Logic ---
   const fetchNotes = useCallback(async () => {
+    const headers = getAuthHeaders();
+    if(!headers){
+      setNotes([]);
+      return;
+    }
     setLoading(true);
     try {
       const response = await axios.get(API_URL);
@@ -63,14 +80,14 @@ function App() {
 
   return (
     <div className="container">
-      <h1>Study Helper App (MERN + AI)</h1>
+      <h1>SmartStudy (MERN + AI)</h1>
       
-      {/* 1. Note Upload Section: Calls fetchNotes on success */}
+      
       <NoteUpload onUploadSuccess={fetchNotes} />
       
       <hr style={{ margin: '30px 0' }} />
 
-      {/* 2. Note List Section: Renders the list and triggers the quiz generation */}
+      
       <NoteList 
         notes={notes} // Pass the notes state
         loading={loading && !quizData}
@@ -80,13 +97,13 @@ function App() {
         fetchNotes={fetchNotes} 
       />
 
-      {/* 3. Quiz View Section: Renders the quiz data */}
+      
       <QuizView 
         quizData={quizData}
         onClearQuiz={clearQuiz}
       />
 
-      {/* Display a general error message if one exists */}
+      
       {error && <p className="message-box message-error">{error}</p>}
     </div>
   );
