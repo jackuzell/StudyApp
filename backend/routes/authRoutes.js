@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = required('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
@@ -30,7 +30,7 @@ router.post('/signup', async (req , res) => {
             {expiresIn: '1h'},
             (err, token) => {
                 if(err)throw err;
-                res.json({toke, user: {id: user.id, username: user.username}});
+                res.json({token, user: {id: user.id, username: user.username}});
             }
         );
     }catch(err){

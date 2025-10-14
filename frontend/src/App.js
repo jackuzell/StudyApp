@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './css/styles.css'; 
-
-import AuthForm from './components/AuthForm';
+import AuthForm from './components/AuthForm'; 
 import NoteUpload from './components/NoteUpload';
 import NoteList from './components/NoteList';
 import QuizView from './components/QuizView';
@@ -10,58 +9,56 @@ import QuizView from './components/QuizView';
 const API_URL = 'http://localhost:5000/api/notes';
 
 function App() {
-  const [user, setUser] = useState(null); // User state for authentication
+  const [user, setUser] = useState(null); 
   const [notes, setNotes] = useState([]);
   const [quizData, setQuizData] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [selectedNoteId, setSelectedNoteId] = useState(null); 
   const [error, setError] = useState('');
 
-  const getAuthHeaders = () => {
+  // Declare all your functions at the top, after state declarations
+  const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('token');
-    if(!token) return null;
-    return{
-      headers:{
-        'x-auth-token': token
+    if (!token) return null;
+    return {
+      headers: {
+        'x-auth-token': token,
       }
     };
-  };
+  }, []);
 
-  // --- Fetch Notes Logic ---
   const fetchNotes = useCallback(async () => {
     const headers = getAuthHeaders();
-    if(!headers){
+    if (!headers) {
       setNotes([]);
       return;
     }
     setLoading(true);
     try {
-      const response = await axios.get(API_URL);
+      const response = await axios.get(API_URL, headers);
       setNotes(response.data);
       setError('');
     } catch (err) {
-      console.error('Error fetching notes:', err);
-      setError('Could not fetch notes list. Check backend server.');
+      console.error('Error fetching notes:', err.response ? err.response.data : err.message);
+      setError('Could not fetch notes list. Please log in.');
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Fetch notes on initial load
-  useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
-
-
-  // --- Quiz Generation Logic ---
-  const generateQuiz = async (noteId) => {
+  }, [getAuthHeaders]);
+  
+  const generateQuiz = useCallback(async (noteId) => {
+    const headers = getAuthHeaders();
+    if (!headers) {
+        setError("You must be logged in to generate a quiz.");
+        return;
+    }
     setLoading(true);
     setQuizData(null);
     setError('');
     setSelectedNoteId(noteId);
 
     try {
-      const response = await axios.get(`${API_URL}/${noteId}/quiz`);
+      const response = await axios.get(`${API_URL}/${noteId}/quiz`, headers);
       setQuizData(response.data);
     } catch (err) {
       console.error('Quiz Generation Error:', err.response ? err.response.data : err.message);
@@ -69,40 +66,73 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthHeaders]);
 
-  // Function to clear the quiz view and return to the list
   const clearQuiz = () => {
     setQuizData(null);
     setSelectedNoteId(null);
     setError('');
   };
 
+  const handleLogin = (userData) => {
+    localStorage.setItem('token', userData.token);
+    const userString = JSON.stringify(userData.user);
+    localStorage.setItem('user', userString);
+    setUser(userData.user);
+    fetchNotes(); 
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setNotes([]);
+    setQuizData(null); 
+    setError('');
+  };
+
+  // Now you can safely call fetchNotes inside this useEffect
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const storedUser = JSON.parse(localStorage.getItem('user'));
+      if (storedUser) {
+        setUser(storedUser);
+        fetchNotes();
+      }
+    }
+  }, [fetchNotes]);
+
   return (
     <div className="container">
-      <h1>SmartStudy (MERN + AI)</h1>
+      <h1>Study Helper App (MERN + AI)</h1>
       
-      
-      <NoteUpload onUploadSuccess={fetchNotes} />
-      
-      <hr style={{ margin: '30px 0' }} />
-
-      
-      <NoteList 
-        notes={notes} // Pass the notes state
-        loading={loading && !quizData}
-        selectedNoteId={selectedNoteId}
-        onGenerateQuiz={generateQuiz}
-    
-        fetchNotes={fetchNotes} 
-      />
-
-      
-      <QuizView 
-        quizData={quizData}
-        onClearQuiz={clearQuiz}
-      />
-
+      {user ? (
+        <>
+          <div style={{ textAlign: 'right', marginBottom: '10px' }}>
+            <span>Welcome, {user.username}</span>
+            <button onClick={handleLogout} style={{ marginLeft: '10px' }}>
+              Logout
+            </button>
+          </div>
+          <NoteUpload onUploadSuccess={fetchNotes} />
+          <hr style={{ margin: '30px 0' }} />
+          <NoteList 
+            notes={notes}
+            loading={loading && !quizData}
+            selectedNoteId={selectedNoteId}
+            onGenerateQuiz={generateQuiz}
+            fetchNotes={fetchNotes}
+            getAuthHeaders={getAuthHeaders}
+          />
+          <QuizView 
+            quizData={quizData}
+            onClearQuiz={clearQuiz}
+          />
+        </>
+      ) : (
+        <AuthForm onLogin={handleLogin} />
+      )}
       
       {error && <p className="message-box message-error">{error}</p>}
     </div>

@@ -1,28 +1,26 @@
 const express = require('express');
 const router = express.Router(); // creation of router object
-const fs = require('fs').promises;
+const fs = require('fs').promises; // FIX: Use the promises API
 const parsePDF = require('pdf-parse'); // extract text from pdf 
 const { GoogleGenAI } = require('@google/genai');// sdk for Google GenAI
-
-
-//Middleware and model
-const upload = require('../middleware/upload'); // import the multer middleware for file uploads
+const auth = require('../middleware/auth'); // Import authentication middleware
 const Note = require('../models/note'); // import the Note model
-const auth = require('../middleware/auth'); // import the auth middleware
-
+const upload = require('../middleware/upload');
 
 //Initilize AI
 const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
 
 // Route to handle file upload
-router.post('/upload', upload, async(req, res) => {
+// Add 'auth' middleware to protect this route
+router.post('/upload', auth, upload, async(req, res) => {
     if(!req.file){
         return res.status(400).json({error: 'No file uploaded or invalid file type'});
     }
     try {
         // Create a new note document in the database
         const newNote = new Note({
-            user: req.user.id, 
+            // Link the note to the authenticated user
+            user: req.user.id,
             title: req.body.title,
             filePath: req.file.path,
             originalFileName: req.file.originalname
@@ -33,44 +31,16 @@ router.post('/upload', upload, async(req, res) => {
         res.status(201).json({message: 'File uploaded successfully', note: newNote});
     } catch (error) {
         console.error('Upload error:', error);
-        await fs.unlink(req.file.path); // Delete the uploaded file if there's an error
+        if(req.file){
+            await fs.unlink(req.file.path); // Delete the uploaded file if there's an error
+        }
         res.status(500).json({error: 'Server error during file upload'});
     }
 });
 
-//Route to delete a note
-router.delete('/:noteId', auth, async(req, res) => {
-    try {
-        const note = await Note.findOne({ _id: req.params.noteId, user: req.user.id });
-        if (!note) {
-            return res.status(404).json({ message: 'Note not found.' });
-        }
-
-        
-        try {
-            await fs.stat(note.filePath); // Check if the file exists
-            await fs.unlink(note.filePath); // Delete the file if it exists
-        } catch (fileError) {
-            if (fileError.code === 'ENOENT') {
-                console.warn('File not found, but proceeding with database deletion:', note.filePath);
-            } else {
-                throw fileError; // Re-throw other errors
-            }
-        }
-
-        // Use the static method on the Note model
-        await Note.deleteOne({ _id: req.params.noteId });
-
-        res.status(200).json({ message: 'Note deleted successfully.' });
-    } catch (error) {
-        console.error('Delete Note Error:', error);
-        res.status(500).json({ message: 'Error deleting the note.', error: error.message });
-    }
-});
-
-
 // Route to generate quiz
-router.get('/:noteId/quiz', async(req, res) => {
+// Add 'auth' middleware to protect this route
+router.get('/:noteId/quiz', auth, async(req, res) => {
     try {
         // Find the note and ensure it belongs to the authenticated user
         const note = await Note.findOne({ _id: req.params.noteId, user: req.user.id });
@@ -118,7 +88,7 @@ router.get('/:noteId/quiz', async(req, res) => {
         //CALL ai agent for output 
         const response = await ai.models.generateContent({
             model:"gemini-2.5-flash",
-            contents: prompt,
+            contents: [{ text: prompt }],
             config: {
                 responseMimeType: "application/json", // requests it in json format
                 responseSchema: {
@@ -166,13 +136,46 @@ router.get('/:noteId/quiz', async(req, res) => {
 });
 
 //Get all notes 
-router.get('/', async(req,res) => {
-    try{ //Maybe add in filter by user id here later 
-        const notes = await (await Note.find({user: req.user.id})).sort({uploadDate: -1});
+// Add 'auth' middleware and filter notes by user
+router.get('/', auth, async(req,res) => {
+    try{
+        const notes = await Note.find({ user: req.user.id }).sort({ uploadDate: -1 });
         res.json(notes);
     } catch(error) {
         console.error('Fetch Notes Error:', error);
         res.status(500).json({message: 'Error fetching notes list.'});
+    }
+});
+
+// Route to handle deleting a note
+// Add 'auth' middleware and check for user ownership
+router.delete('/:noteId', auth, async(req, res) => {
+    try {
+        // Find the note and ensure it belongs to the authenticated user
+        const note = await Note.findOne({ _id: req.params.noteId, user: req.user.id });
+        if (!note) {
+            return res.status(404).json({ message: 'Note not found or you are not authorized to delete it.' });
+        }
+
+        // Add a check to see if the file exists before trying to delete it
+        try {
+            await fs.stat(note.filePath);
+            await fs.unlink(note.filePath); 
+        } catch (fileError) {
+            if (fileError.code === 'ENOENT') {
+                console.warn('File not found, but proceeding with database deletion:', note.filePath);
+            } else {
+                throw fileError;
+            }
+        }
+
+        // Use the static method on the Note model
+        await Note.deleteOne({ _id: req.params.noteId });
+
+        res.status(200).json({ message: 'Note deleted successfully.' });
+    } catch (error) {
+        console.error('Delete Note Error:', error);
+        res.status(500).json({ message: 'Error deleting the note.', error: error.message });
     }
 });
 

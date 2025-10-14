@@ -3,12 +3,13 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/notes';
 
-const NoteList = ({ notes, onGenerateQuiz, selectedNoteId, loading, fetchNotes }) => {
+const NoteList = ({ notes, onGenerateQuiz, selectedNoteId, loading, fetchNotes, getAuthHeaders }) => {
 
   const handleDeleteNote = async (noteId, e) => {
     e.stopPropagation(); // Prevents clicking the parent element
     try {
-      await axios.delete(`${API_URL}/${noteId}`);
+      const headers = getAuthHeaders();
+      await axios.delete(`${API_URL}/${noteId}`,headers);
       fetchNotes(); // Re-fetch the list to show the updated notes
     } catch (error) {
       console.error("Error deleting note:", error);

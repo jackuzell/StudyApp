@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-module.exports = functions(req , resizeBy, next) {
+module.exports = function(req , res, next){
     //Get token out of header
     const token = req.header('x-auth-token');
 
@@ -15,6 +15,6 @@ module.exports = functions(req , resizeBy, next) {
         req.user = decoded.user; //{id: user.id}
         next();
     }catch(err){
-        res.status(401).json({message:'Token is not valid'});
+        res.status(401).json({message:'Token is not valid '});
     }
 };
