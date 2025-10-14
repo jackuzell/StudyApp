@@ -1,111 +1,173 @@
-
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f7f6;
+    font-family: 'Inter', sans-serif; /* Changed font */
+    background-color: #eef1f6; /* Lighter background */
     margin: 0;
     padding: 0;
 }
 
 .container {
-    max-width: 800px;
+    max-width: 900px; /* Slightly wider container */
     margin: 40px auto;
-    padding: 30px;
+    padding: 40px;
     background-color: #ffffff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Stronger, softer shadow */
+    border-radius: 12px;
 }
 
 h1 {
-    color: #007bff;
+    color: #2c3e50; /* Darker, professional primary color */
     text-align: center;
     margin-bottom: 30px;
+    font-size: 2.5rem;
+    font-weight: 700;
 }
 
 h2 {
-    border-bottom: 2px solid #007bff;
-    padding-bottom: 5px;
-    margin-bottom: 20px;
-    color: #333;
+    border-bottom: 2px solid #3498db; /* Clearer primary blue line */
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+    color: #34495e;
+    font-size: 1.5rem;
 }
 
 /* FORM/INPUT STYLES */
-.upload-section {
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+.upload-section, .auth-form-section {
+    padding: 25px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
     margin-bottom: 30px;
-    background-color: #f9f9f9;
+    background-color: #f9fbfd;
 }
 
 .upload-section input[type="text"],
-.upload-section input[type="file"] {
+.upload-section input[type="file"],
+.auth-form-section input {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Include padding in the element's total width and height */
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
 }
 
-/* BUTTON STYLES */
+.upload-section input:focus, .auth-form-section input:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+/* BUTTON STYLES - Focused on clear hierarchy */
 button {
     padding: 10px 20px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    font-weight: bold;
-    background-color: #007bff;
+    transition: background-color 0.3s ease, box-shadow 0.2s;
+    font-weight: 600;
     color: white;
 }
 
-button:hover:not(:disabled) {
-    background-color: #0056b3;
+/* Primary Button - Quiz/Summary/Upload */
+button:not(.delete-btn) {
+    background-color: #3498db; /* Primary Blue */
+    box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);
+}
+
+button:hover:not(:disabled):not(.delete-btn) {
+    background-color: #2980b9;
+    box-shadow: 0 6px 8px rgba(52, 152, 219, 0.4);
+}
+
+/* Danger Button - Delete */
+.delete-btn {
+    background-color: #e74c3c;
+    margin-left: 10px;
+}
+
+.delete-btn:hover:not(:disabled) {
+    background-color: #c0392b;
 }
 
 button:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
 /* NOTE LIST STYLES */
 .note-list-item {
-    border: 1px solid #eee;
-    padding: 15px;
-    margin-bottom: 12px;
-    border-radius: 4px;
+    border: 1px solid #ecf0f1;
+    padding: 18px;
+    margin-bottom: 10px;
+    border-radius: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: white;
+    background-color: #ffffff;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.note-list-item:hover {
+    background-color: #f5f5f5;
+    border-color: #bdc3c7;
 }
 
 .note-list-item.selected {
-    background-color: #e6f7ff; /* Highlight color */
-    border-color: #99ccff;
+    background-color: #d8eaff; /* Highlight color */
+    border-color: #3498db;
+    box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2);
+}
+
+.note-details strong {
+    font-size: 1.1em;
+    color: #2c3e50;
 }
 
 .note-details p {
-    font-size: 0.85em;
-    color: #666;
+    font-size: 0.8rem;
+    color: #7f8c8d;
     margin: 5px 0 0 0;
 }
 
-/* QUIZ VIEW STYLES */
-.quiz-view-section {
-    margin-top: 30px;
-    border: 2px solid #007bff;
-    padding: 25px;
-    border-radius: 8px;
-    background-color: #eaf6ff;
+/* ACTION BUTTON GROUP */
+.note-actions {
+    display: flex;
+    gap: 10px; /* Space between buttons */
+    align-items: center;
 }
 
-.quiz-question {
+.note-actions button {
+    font-size: 0.85rem;
+    padding: 8px 15px;
+}
+
+/* QUIZ & SUMMARY VIEW STYLES */
+.quiz-view-section, .summary-view-section {
+    margin-top: 30px;
+    border: 2px solid #3498db;
+    padding: 30px;
+    border-radius: 10px;
+    background-color: #f7fcff;
+}
+
+.quiz-question, .summary-content {
     margin-bottom: 20px;
     padding: 15px;
     background: #ffffff;
     border-radius: 6px;
-    border-left: 5px solid #007bff;
+    border-left: 5px solid #3498db;
+}
+
+.summary-content pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #eee;
 }
 
 .quiz-question h4 {
@@ -122,44 +184,43 @@ button:disabled {
     padding: 5px 0;
 }
 
-.quiz-clear-btn {
-    background-color: #dc3545;
-    color: white;
-    margin-top: 15px;
-    float: right;
-}
-
-.quiz-clear-btn:hover:not(:disabled) {
-    background-color: #c82333;
-}
-
-/* MESSAGE STYLES */
+/* Message Styles */
 .message-box {
     margin-top: 15px;
-    padding: 10px;
-    border-radius: 4px;
+    padding: 12px;
+    border-radius: 6px;
     font-weight: bold;
+    text-align: center;
 }
 
 .message-success {
-    color: green;
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
+    color: #27ae60;
+    background-color: #e6ffee;
+    border: 1px solid #d0f0d0;
 }
 
 .message-error {
-    color: red;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
+    color: #e74c3c;
+    background-color: #ffe6e6;
+    border: 1px solid #ffd0d0;
 }
-
 
 .correct-answer {
     background-color: #d4edda;
-    border-color: #c3e6cb;
 }
 
 .incorrect-answer {
     background-color: #f8d7da;
-    border-color: #f5c6cb;
+}
+
+/* Auth Form specific styles */
+.auth-form-section p {
+    margin-top: 20px;
+    text-align: center;
+    color: #3498db;
+    cursor: pointer;
+}
+
+.auth-form-section p:hover {
+    text-decoration: underline;
 }
