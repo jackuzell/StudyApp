@@ -5,6 +5,7 @@ import AuthForm from './components/AuthForm';
 import NoteUpload from './components/NoteUpload';
 import NoteList from './components/NoteList';
 import QuizView from './components/QuizView';
+import SummaryView from './components/SummaryView';
 
 const API_URL = 'http://localhost:5000/api/notes';
 
@@ -12,6 +13,7 @@ function App() {
   const [user, setUser] = useState(null); 
   const [notes, setNotes] = useState([]);
   const [quizData, setQuizData] = useState(null); 
+  const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedNoteId, setSelectedNoteId] = useState(null); 
   const [error, setError] = useState('');
@@ -28,19 +30,50 @@ function App() {
   }, []);
 
   const fetchNotes = useCallback(async () => {
+  const headers = getAuthHeaders();
+  if (!headers) {
+     setNotes([]);
+      // Set a specific error message if the headers/token are missing
+      setError('Authorization token missing. Please log in or sign up.'); 
+      return;
+}
+setLoading(true);
+   try {
+    
+   const response = await axios.get(API_URL, headers);
+   setNotes(response.data);
+   setError('');
+
+   } catch (err) 
+   {
+   console.error('Error fetching notes:', err.response ? err.response.data : err.message);
+      // The error below now primarily handles 'Token is not valid' (expiration)
+   setError('Session expired or invalid. Please log in again.'); 
+   } finally {
+  setLoading(false);
+   }
+  }, [getAuthHeaders]);
+
+  const generateSummary = useCallback(async (noteId) => {
     const headers = getAuthHeaders();
     if (!headers) {
-      setNotes([]);
-      return;
+        setError("You must be logged in to generate a summary.");
+        return;
     }
     setLoading(true);
+    setQuizData(null); // Clear quiz view if present
+    setSummaryData(null); // Clear previous summary
+    setError('');
+    setSelectedNoteId(noteId);
+
     try {
-      const response = await axios.get(API_URL, headers);
-      setNotes(response.data);
+      // Call the new backend endpoint for summarization
+      const response = await axios.get(`${API_URL}/${noteId}/summarize`, headers);
+      setSummaryData(response.data);
       setError('');
     } catch (err) {
-      console.error('Error fetching notes:', err.response ? err.response.data : err.message);
-      setError('Could not fetch notes list. Please log in.');
+      console.error('Summary Generation Error:', err.response ? err.response.data : err.message);
+      setError(`Summary generation failed: ${err.response?.data?.message || 'Check API key/file type.'}`);
     } finally {
       setLoading(false);
     }
@@ -54,6 +87,7 @@ function App() {
     }
     setLoading(true);
     setQuizData(null);
+    setSummaryData(null); // Clear summary view if present
     setError('');
     setSelectedNoteId(noteId);
 
@@ -74,6 +108,12 @@ function App() {
     setError('');
   };
 
+   const clearSummary = () => {
+    setSummaryData(null);
+    setSelectedNoteId(null);
+    setError('');
+  };
+
   const handleLogin = (userData) => {
     localStorage.setItem('token', userData.token);
     const userString = JSON.stringify(userData.user);
@@ -87,11 +127,12 @@ function App() {
     localStorage.removeItem('user');
     setUser(null);
     setNotes([]);
+    setSummaryData(null);
     setQuizData(null); 
     setError('');
   };
 
-  // Now you can safely call fetchNotes inside this useEffect
+  // can safely call fetchNotes inside this useEffect
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -104,13 +145,13 @@ function App() {
   }, [fetchNotes]);
 
   return (
-    <div className="container">
+     <div className="container">
       <h1>Study Helper App (MERN + AI)</h1>
       
       {user ? (
         <>
           <div style={{ textAlign: 'right', marginBottom: '10px' }}>
-            <span>Welcome, {user.username}</span>
+            <span>Welcome, **{user.username}**</span>
             <button onClick={handleLogout} style={{ marginLeft: '10px' }}>
               Logout
             </button>
@@ -119,16 +160,27 @@ function App() {
           <hr style={{ margin: '30px 0' }} />
           <NoteList 
             notes={notes}
-            loading={loading && !quizData}
+            // Loading state applies if processing EITHER quiz OR summary
+            loading={loading && (quizData === null && summaryData === null)}
             selectedNoteId={selectedNoteId}
             onGenerateQuiz={generateQuiz}
+            // Pass the summary generation function
+            onGenerateSummary={generateSummary}
             fetchNotes={fetchNotes}
             getAuthHeaders={getAuthHeaders}
           />
-          <QuizView 
+          
+          {/* RENDER EITHER QUIZ OR SUMMARY VIEW, prioritizes one over the other */}
+          {quizData && <QuizView 
             quizData={quizData}
             onClearQuiz={clearQuiz}
-          />
+          />}
+          
+          {summaryData && <SummaryView
+            summaryData={summaryData}
+            onClearSummary={clearSummary}
+          />}
+          
         </>
       ) : (
         <AuthForm onLogin={handleLogin} />

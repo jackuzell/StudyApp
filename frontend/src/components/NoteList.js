@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/notes';
 
-const NoteList = ({ notes, onGenerateQuiz, selectedNoteId, loading, fetchNotes, getAuthHeaders }) => {
+const NoteList = ({ notes, onGenerateQuiz, onGenerateSummary, selectedNoteId, loading, fetchNotes, getAuthHeaders }) => {
 
   const handleDeleteNote = async (noteId, e) => {
     e.stopPropagation(); // Prevents clicking the parent element
@@ -26,6 +26,7 @@ const NoteList = ({ notes, onGenerateQuiz, selectedNoteId, loading, fetchNotes, 
       <ul style={{ padding: 0 }}>
         {notes.map(note => {
           const isSelected = note._id === selectedNoteId;
+          const isProcessing = loading && isSelected;
           return (
             <li 
               key={note._id} 
@@ -36,16 +37,28 @@ const NoteList = ({ notes, onGenerateQuiz, selectedNoteId, loading, fetchNotes, 
                 <p>Uploaded: {new Date(note.uploadDate).toLocaleDateString()}</p>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div className="note-actions"> 
+                {/* Summary button */}
+                <button
+                  onClick={() => onGenerateSummary(note._id)}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Summarizing...' : 'Generate Key Notes'}
+                </button>
+                
+                {/*  Quiz Button */}
                 <button
                   onClick={() => onGenerateQuiz(note._id)}
-                  disabled={loading}
+                  disabled={isProcessing}
                 >
-                  {loading && isSelected ? 'Generating...' : 'Generate AI Quiz'}
+                  {isProcessing ? 'Generating...' : 'Generate AI Quiz'}
                 </button>
+                
+                {/* Delte button */}
                 <button
                   onClick={(e) => handleDeleteNote(note._id, e)}
-                  style={{ marginLeft: '10px', backgroundColor: '#dc3545' }}
+                  disabled={isProcessing}
+                  className="delete-btn" 
                 >
                   Delete
                 </button>

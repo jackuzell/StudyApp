@@ -10,8 +10,28 @@ const upload = require('../middleware/upload');
 //Initilize AI
 const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
 
+
+const extractNoteText = async (note) => {
+    const fileExtension = note.originalFileName.split('.').pop().toLowerCase();
+    let noteText = '';
+
+    if (fileExtension === 'pdf') {
+        const dataBuffer = await fs.readFile(note.filePath);
+        const data = await parsePDF(dataBuffer);
+        noteText = data.text;
+    } else if (fileExtension === 'txt') {
+        noteText = await fs.readFile(note.filePath, 'utf-8');
+    } else {
+        throw new Error('Unsupported file type');
+    }
+
+    if (!noteText.trim()) {
+        throw new Error('Note text is empty or could not be extracted');
+    }
+    return noteText;
+};
+
 // Route to handle file upload
-// Add 'auth' middleware to protect this route
 router.post('/upload', auth, upload, async(req, res) => {
     if(!req.file){
         return res.status(400).json({error: 'No file uploaded or invalid file type'});
@@ -38,8 +58,49 @@ router.post('/upload', auth, upload, async(req, res) => {
     }
 });
 
-// Route to generate quiz
-// Add 'auth' middleware to protect this route
+//Generate Summary/Key Notes
+router.get('/:noteId/summarize', auth, async(req, res) => {
+    try {
+        const note = await Note.findOne({ _id: req.params.noteId, user: req.user.id });
+
+        if(!note) {
+            return res.status(404).json({message: 'Note not found or you are not authorized to view it.'});
+        }
+
+        const noteText = await extractNoteText(note);
+
+        // Prompt to the AI agent to generate key notes
+         const prompt = `
+            You are an expert academic assistant specializing in distilling complex documents into concise key notes.
+            Analyze the study notes provided below and generate a summary structured as clear, concise, and easy-to-read bullet points.
+            The summary should focus only on the main concepts and facts. Do not include any introductory or concluding sentences outside of the bullet points.
+            
+            STUDY NOTES:
+            ---
+            ${noteText}
+            ---
+            `;
+        
+        const response = await ai.models.generateContent({
+            model:"gemini-2.5-flash",
+            // Using the full content object structure for safety
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+        });
+
+        const summaryText = response.text;
+
+        // Send the summary back as plain text
+        res.json({ title: `${note.title} Key Notes`, summary: summaryText });
+        
+    } catch(error) {
+        console.error('Summary generation error:', error);
+        // Ensure the error response is formatted correctly for the frontend
+        res.status(500).json({message: 'Error generating summary from notes.', error: error.message});
+    }
+});
+
+
+// Route to generate quiz 
 router.get('/:noteId/quiz', auth, async(req, res) => {
     try {
         // Find the note and ensure it belongs to the authenticated user
@@ -50,25 +111,7 @@ router.get('/:noteId/quiz', auth, async(req, res) => {
             return res.status(404).json({message: 'Note not found or you are not authorized to view it.'});
         }
 
-        let noteText = '';
-        const fileExtension = note.originalFileName.split('.').pop().toLowerCase();
-        // Extract text based on file type
-        if(fileExtension === 'pdf')
-        {
-            const dataBuffer = await fs.readFile(note.filePath);//Read file
-            const data = await parsePDF(dataBuffer);//parse to extract text
-            noteText = data.text;
-        } else if(fileExtension === 'txt') // can read directly 
-        {
-            noteText = await fs.readFile(note.filePath, 'utf-8');
-        }else{
-            return res.status(400).json({message: 'Unsupported file type'});
-        }
-
-        if(!noteText.trim())
-        {
-            return res.status(400).json({message: 'Note text is empty or could not be extracted'});
-        }
+        const noteText = await extractNoteText(note);
 
         //Prompt to the ai agent 
          const prompt = `
@@ -136,7 +179,6 @@ router.get('/:noteId/quiz', auth, async(req, res) => {
 });
 
 //Get all notes 
-// Add 'auth' middleware and filter notes by user
 router.get('/', auth, async(req,res) => {
     try{
         const notes = await Note.find({ user: req.user.id }).sort({ uploadDate: -1 });
@@ -148,7 +190,6 @@ router.get('/', auth, async(req,res) => {
 });
 
 // Route to handle deleting a note
-// Add 'auth' middleware and check for user ownership
 router.delete('/:noteId', auth, async(req, res) => {
     try {
         // Find the note and ensure it belongs to the authenticated user
