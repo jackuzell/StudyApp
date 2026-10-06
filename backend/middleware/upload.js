@@ -1,10 +1,17 @@
 const multer = require("multer"); // Import multer for handling file uploads
 const path = require("path"); // Import path module for handling file paths
+const fs = require("fs");
 
-//configure storage for uploaded files
+// Ensure uploads directory exists on any host
+const uploadDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure storage for uploaded files
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => { //defines the destination folder for uploaded files
-        cb(null, 'uploads/');// Tells multer ro sace files in the 'uploads/' directory
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => { //defines the naming convention for uploaded files
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9); // Create a umiquw name to avoid conflicts
