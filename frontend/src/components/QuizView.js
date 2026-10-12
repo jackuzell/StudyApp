@@ -65,7 +65,7 @@ const QuizView = ({ quizData, onClearQuiz }) => {
     <div className="card quiz-section-card" id="quiz-view-section">
       <div className="card-header quiz-header">
         <div className="card-title-group">
-          <div className="icon-badge icon-badge-purple">
+          <div className="icon-badge icon-badge-neutral">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>

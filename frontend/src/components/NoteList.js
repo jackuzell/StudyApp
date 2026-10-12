@@ -44,7 +44,7 @@ const NoteList = ({
     <div className="card note-list-card">
       <div className="card-header">
         <div className="card-title-group">
-          <div className="icon-badge icon-badge-indigo">
+          <div className="icon-badge icon-badge-neutral">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
